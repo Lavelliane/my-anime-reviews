@@ -1,14 +1,28 @@
 'use client';
 import { animeSeries } from '@/dummyData/dummy';
 import { Form, Input, Button, Rate } from 'antd';
+import { useMutation } from '@apollo/client';
+import { CREATE_REVIEW } from '@/gql/animes/mutations';
+import dayjs from 'dayjs';
+import { GET_ANIME, GET_ANIMES } from '@/gql/animes/queries';
 
-function ReviewForm({ id, closeForm }) {
+function ReviewForm({ id, closeForm, refetch }) {
   const [reviewForm] = Form.useForm();
-  const handleSubmit = () => {
+  const [createReview] = useMutation(CREATE_REVIEW)
+  const handleSubmit = async () => {
     const reviewData = reviewForm.getFieldsValue();
-    const targetIndex = animeSeries.findIndex(obj => obj.id === id)
-    if(targetIndex !== -1){
-        animeSeries[targetIndex].reviews.push({...reviewData, animeId: id})
+    try {
+      const res = await createReview({
+        variables: {
+          data: { ...reviewData, Anime: id, publishedAt: dayjs().format() }
+        }
+      })
+      if(res) {
+        refetch()
+        closeForm()
+      }
+    } catch (e) {
+      console.error(e)
     }
     closeForm()
   };
@@ -37,7 +51,7 @@ function ReviewForm({ id, closeForm }) {
         label="Rating"
         rules={[{ required: true, message: 'Please rate the anime' }]}
       >
-        <Rate />
+        <Rate allowHalf={true} count={10} />
       </Form.Item>
 
       <Form.Item

@@ -11,7 +11,7 @@ function AnimeCards({ image, title, season, onClick }) {
       cover={
         <img
           alt="example"
-          src={image}
+          src={`http://localhost:1337${image}`}
         />
       }
     >
