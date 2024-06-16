@@ -3,5 +3,5 @@ export function calculateAverageRating(anime) {
     if (reviews.length === 0) return 0;
 
     const totalRating = reviews.reduce((sum, review) => sum + review.rating, 0);
-    return totalRating / reviews.length;
+    return (totalRating / reviews.length).toFixed(2);
 }

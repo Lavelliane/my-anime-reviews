@@ -4,24 +4,42 @@ import { animeSeries } from '@/dummyData/dummy';
 import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { StarOutlined, PlusOutlined } from '@ant-design/icons';
-import { Button, Modal } from 'antd';
+import { Button, Modal, Tag } from 'antd';
 import Review from '@/components/Review';
 import { calculateAverageRating } from '@/utils/calculateAverageRating';
 import ReviewForm from '@/components/ReviewForm';
+import { useLazyQuery } from '@apollo/client';
+import { GET_ANIME } from '@/gql/animes/queries';
+import transformResponse from '@/utils/transformResponse';
+import transformSingleResponse from '@/utils/transformSingleResponse';
 function AnimeDetailsPage() {
   const params = useParams();
   const [animeData, setAnimeData] = useState(null);
   const [averageRating, setAverageRating] = useState(0);
   const [onReviewFormOpen, setOnReviewFormOpen] = useState(false)
+  const [getAnimeById] = useLazyQuery(GET_ANIME, {
+    fetchPolicy: 'no-cache',
+  })
+
   useEffect(() => {
-    if (params) {
-      const anime = animeSeries.find((anime) => anime.id === +params.id);
-      if (anime) {
-        setAnimeData(anime);
-        setAverageRating(calculateAverageRating(anime))
-      }
-    }
+    handleGetAnime()
   }, [params]);
+
+  const handleGetAnime = () => {
+    if (params) {
+      getAnimeById({
+        variables: {
+          id: params.id
+        }
+      }).then((res) => {
+        if(res.data.anime){
+          //SET AVERAGE RATING
+          setAverageRating(calculateAverageRating(transformSingleResponse(res.data.anime)))
+          setAnimeData(transformSingleResponse(res.data.anime))
+        }
+      }).catch(e => console.error(e))
+    }
+  }
 
   const showReviewForm = () => {
     setOnReviewFormOpen(true)
@@ -35,7 +53,7 @@ function AnimeDetailsPage() {
         <>
           <div className="flex gap-10 items-center mb-10">
             <img
-              src={animeData.image}
+              src={`http://localhost:1337${animeData.image.url}`}
               alt={animeData.title}
               className="w-[394px] h-auto"
             />
@@ -51,7 +69,7 @@ function AnimeDetailsPage() {
               </div>
             </div>
           </div>
-          <div className="flex">
+          <div className="flex gap-8">
             {/* DETAILS */}
             <div className="max-w-[394px] w-full">
               <p className="text-lg font-semibold mb-4">Details</p>
@@ -61,7 +79,7 @@ function AnimeDetailsPage() {
               </div>
               <div className="grid grid-cols-2 mb-4 gap-5 text-sm">
                 <p>Genre</p>
-                <p>{animeData.genre}</p>
+                <Tag color="purple" className="w-[50%] text-center">{animeData.genre.split('_').join(' ')}</Tag>
               </div>
               <div className="grid grid-cols-2 mb-4 gap-5 text-sm">
                 <p>Season</p>
@@ -83,7 +101,7 @@ function AnimeDetailsPage() {
             animeData.reviews.map((review, i) => <Review key={i} {...review} />)
           )}
           <Modal open={onReviewFormOpen} onCancel={closeReviewForm} footer={null}>
-            <ReviewForm id={animeData.id} closeForm={closeReviewForm} />
+            <ReviewForm id={animeData.id} closeForm={closeReviewForm} refetch={handleGetAnime} />
           </Modal>
         </>
       ) : (
