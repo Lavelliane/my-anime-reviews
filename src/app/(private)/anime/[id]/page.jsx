@@ -34,8 +34,9 @@ function AnimeDetailsPage() {
       }).then((res) => {
         if(res.data.anime){
           //SET AVERAGE RATING
-          setAverageRating(calculateAverageRating(transformSingleResponse(res.data.anime)))
-          setAnimeData(transformSingleResponse(res.data.anime))
+          const result = transformSingleResponse(res.data.anime)
+          setAverageRating(calculateAverageRating(result))
+          setAnimeData(result)
         }
       }).catch(e => console.error(e))
     }
