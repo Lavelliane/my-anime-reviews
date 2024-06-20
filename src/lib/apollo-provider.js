@@ -7,10 +7,22 @@ import {
   ApolloClient,
   SSRMultipartLink,
 } from "@apollo/experimental-nextjs-app-support";
+import { setContext } from "@apollo/client/link/context"
+import Cookies from "js-cookie";
 
 function makeClient() {
   const httpLink = new HttpLink({
       uri: "http://localhost:1337/graphql",
+  });
+
+  const authLink = setContext((_, { headers }) => {
+    const token = Cookies.get('jwt') 
+    return {
+      headers: {
+        ...headers,
+        Authorization: token ? `Bearer ${token}` : "",
+      },
+    };
   });
 
   return new ApolloClient({
@@ -21,9 +33,10 @@ function makeClient() {
             new SSRMultipartLink({
               stripDefer: true,
             }),
-            httpLink,
+            authLink,
+            httpLink
           ])
-        : httpLink,
+        : ApolloLink.from([authLink, httpLink]),
   });
 }
 
